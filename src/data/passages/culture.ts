@@ -490,7 +490,7 @@ export const bank12: PassageBank = {
       gold: [
         {
           feature: "noun-proper",
-          spans: ["Wonthaggi", "Nadia Oyelaran"],
+          spans: ["Wonthaggi","Nadia Oyelaran’s"],
           note: "A place name and the invented name of a composer.",
         },
         {

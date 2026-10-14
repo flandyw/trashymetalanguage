@@ -27,7 +27,8 @@ export default function LibraryPanel({ currentId, onPick, mastered, onClose }: P
             !q ||
             p.title.toLowerCase().includes(q) ||
             p.source.toLowerCase().includes(q) ||
-            p.text.toLowerCase().includes(q),
+            p.text.toLowerCase().includes(q) ||
+            p.gold.some(g => feature(g.feature)?.label.toLowerCase().includes(q)),
         )
         .map((p) => ({ p, bankLabel: b.label })),
     )
@@ -39,8 +40,7 @@ export default function LibraryPanel({ currentId, onPick, mastered, onClose }: P
         <div>
           <h2>Passage library</h2>
           <p className="library__sub">
-            Climb the ladder: word → phrase → sentence → paragraph. Every passage is annotated
-            by hand.
+            Start with a text in context, or focus on a word, phrase or short extract. Each text includes a teaching key.
           </p>
         </div>
         <button type="button" className="btn btn--ghost btn--tiny" onClick={onClose}>
@@ -84,7 +84,7 @@ export default function LibraryPanel({ currentId, onPick, mastered, onClose }: P
         <input
           type="search"
           value={query}
-          placeholder="Search passages…"
+          placeholder="Search a passage, topic or feature…"
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search passages"
         />

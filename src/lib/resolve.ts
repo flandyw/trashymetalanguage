@@ -134,7 +134,8 @@ export function validatePassages(passages: Passage[]): ValidationReport {
     seen.add(p.id)
 
     const twin = seenText.get(p.text)
-    if (twin) errors.push(`${p.id}: duplicate passage text (same as ${twin})`)
+    // Single-word exercises may revisit the same word with a different teaching focus.
+    if (twin) warnings.push(`${p.id}: duplicate passage text (same as ${twin})`)
     else seenText.set(p.text, p.id)
 
     if (p.text.includes('`')) errors.push(`${p.id}: text contains a backtick`)
@@ -143,13 +144,13 @@ export function validatePassages(passages: Passage[]): ValidationReport {
     }
 
     /* ---- VCE classification ---- */
-    if (![1, 2, 3, 4].includes(p.unit)) errors.push(`${p.id}: unit must be 1, 2, 3 or 4`)
+    if (p.unit !== undefined && ![1, 2, 3, 4].includes(p.unit)) errors.push(`${p.id}: unit must be 1, 2, 3 or 4`)
     const area = AREAS.find((a) => a.id === p.areaOfStudy)
-    if (!area) errors.push(`${p.id}: unknown areaOfStudy "${p.areaOfStudy}"`)
-    else if (area.unit !== p.unit) {
+    if (p.areaOfStudy !== undefined && !area) errors.push(`${p.id}: unknown areaOfStudy "${p.areaOfStudy}"`)
+    else if (area && p.unit !== undefined && area.unit !== p.unit) {
       errors.push(`${p.id}: areaOfStudy ${p.areaOfStudy} belongs to unit ${area.unit}, not ${p.unit}`)
     }
-    if (!textTypes.has(p.textType)) errors.push(`${p.id}: bad textType "${p.textType}"`)
+    if (p.textType !== undefined && !textTypes.has(p.textType)) errors.push(`${p.id}: bad textType "${p.textType}"`)
     if (!modes.has(p.mode)) errors.push(`${p.id}: bad mode "${p.mode}"`)
     if (!p.field?.trim()) errors.push(`${p.id}: empty field`)
     if (!p.tenor?.trim()) errors.push(`${p.id}: empty tenor`)
@@ -190,7 +191,7 @@ export function validatePassages(passages: Passage[]): ValidationReport {
       if (feat.scope === 'text') {
         errors.push(`${p.id}: "${g.feature}" is a whole-text feature and cannot be a gold span`)
       }
-      if (!feat.units.includes(p.unit)) {
+      if (p.unit !== undefined && !feat.units.includes(p.unit)) {
         warnings.push(`${p.id}: "${g.feature}" is not listed for unit ${p.unit} in the study design`)
       }
       const occs = prepared.targets.get(g.feature) ?? []

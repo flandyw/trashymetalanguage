@@ -171,7 +171,7 @@ export type RegisterId = (typeof REGISTER_IDS)[number]
 export const REGISTER_LABELS: Record<string, string> = {
   'formal-register': 'Formal',
   'informal-register': 'Informal',
-  'neutral-register': 'Mid-formal',
+  'neutral-register': 'Neutral',
 }
 
 export const SENTENCE_TYPE_IDS = [

@@ -556,8 +556,7 @@ export const bank14: PassageBank = {
           spans: ["Big bold Bunnings bargains"],
           note: "Four words in a row start with the same consonant sound.",
         },
-        { feature: "adjective", spans: ["Big"], note: "Describes the bargains on offer." },
-        { feature: "adjective", spans: ["bold"], note: "A second modifier stacking up the emphasis." },
+        { feature: "adjective", spans: ["Big","bold"], note: "Describes the bargains on offer. A second modifier stacking up the emphasis." },
         {
           feature: "noun-proper",
           spans: ["Bunnings"],

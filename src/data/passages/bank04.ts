@@ -33,7 +33,7 @@ export const bank04: PassageBank = {
       gold: [
         {
           feature: 'noun-collective',
-          spans: ['authorities', 'crews'],
+          spans: ["authorities"],
           note: 'Singular in form, standing for an unspecified group of people.',
         },
         {

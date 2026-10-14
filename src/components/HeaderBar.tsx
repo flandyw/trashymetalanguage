@@ -19,7 +19,7 @@ export default function HeaderBar({ profile, onOpenProgress, onReset }: Props) {
         <div>
           <h1>Metalanguage Highlighter</h1>
           <p className="brand__sub">
-            VCE English Language · spot the features, name them, level up
+            VCE English Language · Read closely. Name precisely. Explain clearly.
           </p>
         </div>
       </div>
@@ -42,7 +42,7 @@ export default function HeaderBar({ profile, onOpenProgress, onReset }: Props) {
             <span className="stat__label">XP</span>
           </div>
           <div className="stat">
-            <span className="stat__value">{Math.round(acc * 100)}%</span>
+            <span className="stat__value">{profile.totalRight + profile.totalWrong > 0 ? `${Math.round(acc * 100)}%` : '—'}</span>
             <span className="stat__label">accuracy</span>
           </div>
           <div className="stat">

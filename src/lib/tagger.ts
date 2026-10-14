@@ -17,7 +17,7 @@ import {
   SUFFIXES,
   type Confidence,
 } from './lexicon'
-import { tokenize, type Token, type Tokenized } from './tokenize'
+import { tokenize, looksLikeTranscript, type TokenizeOptions, type Token, type Tokenized } from './tokenize'
 
 export interface Tag {
   feature: string
@@ -200,7 +200,6 @@ const PROPER_HINTS = new Set([
     'luke',
     'ella',
   ],
-  'i',
 ])
 
 const APOSTROPHE = /[’']/
@@ -307,7 +306,20 @@ function tagWord(ctx: Ctx): Tag[] {
   const token = tokens[i]
   const raw = token.text
   const w = stripApostrophe(token.lower)
-  const next = i + 1 < tokens.length ? stripApostrophe(tokens[i + 1].lower) : ''
+  const nextToken = tokens[i + 1]
+  const next = nextToken?.sentence === token.sentence ? stripApostrophe(nextToken.lower) : ''
+  const previous = tokens[i - 1]?.sentence === token.sentence ? stripApostrophe(tokens[i - 1].lower) : ''
+  const nextNoun = SET.nouns.has(next) || SET.abstractNouns.has(next) || !!inflectedNounForm(next)
+  const nextVerb = SET.verbs.has(next) || SET.auxiliaries.has(next) || SET.modalVerbs.has(next)
+  const demonstrativeDeterminer = SET.demonstratives.has(w) && (nextNoun || SET.adjectives.has(next))
+  const complementiser = w === 'that' && !demonstrativeDeterminer &&
+    (SET.pronouns.has(next) || SET.determiners.has(next))
+  const nounContext = SET.determiners.has(previous) && !SET.pronouns.has(previous)
+  const verbContext = SET.pronouns.has(previous) || SET.modalVerbs.has(previous) || previous === 'to'
+  const monthMay = w === 'may' && isCapitalised(raw) && (SET.prepositions.has(previous) || !nextVerb)
+  const marginalMainVerb = (w === 'need' || w === 'dare') && !nextVerb
+  const participle = (word: string) => !!word && (word.endsWith('ing') || word.endsWith('ed') || ['gone', 'seen', 'been', 'done', 'known', 'taken', 'written', 'found', 'made', 'given', 'told', 'built', 'left', 'read', 'bought', 'brought'].includes(word))
+  const auxiliaryComplement = next === 'not' ? stripApostrophe(tokens[i + 2]?.lower ?? '') : next
   const tags: Tag[] = []
   const push = (feature: string, confidence: Confidence, note?: string) => {
     if (!tags.some((t) => t.feature === feature)) tags.push({ feature, confidence, note })
@@ -317,7 +329,7 @@ function tagWord(ctx: Ctx): Tag[] {
   if (APOSTROPHE.test(raw)) {
     const isContraction = SET.contractions.has(w)
     if (isContraction) {
-      push('contraction', 'high', 'A contraction imitates speech and lowers formality.')
+      push('contraction', 'high', 'A shortened grammatical form, with an apostrophe marking omitted letters.')
     }
     const tail = w.slice(w.indexOf("'") + 1)
     // Only read the clitic as an auxiliary when the whole word is a genuine
@@ -336,7 +348,7 @@ function tagWord(ctx: Ctx): Tag[] {
   if (SET.interjections.has(w)) {
     push('interjection', 'high', 'A grammatically independent word carrying feeling.')
   }
-  if (SET.modalVerbs.has(w)) {
+  if (SET.modalVerbs.has(w) && !marginalMainVerb && !monthMay && !(w === 'can' && nounContext)) {
     push(
       'verb-modal',
       'high',
@@ -345,7 +357,13 @@ function tagWord(ctx: Ctx): Tag[] {
     push('verb-auxiliary', 'medium')
   }
   if (SET.auxiliaries.has(w) && !SET.modalVerbs.has(w)) {
-    push('verb-auxiliary', 'high', 'Carries tense, aspect or voice rather than meaning.')
+    if (participle(auxiliaryComplement) || (['do', 'does', 'did'].includes(w) && SET.verbs.has(auxiliaryComplement))) {
+      push('verb-auxiliary', 'medium', 'Supports another verb to express tense, aspect, voice or a question.')
+    } else if (['be', 'am', 'is', 'are', 'was', 'were', 'been', 'being'].includes(w) && (SET.adjectives.has(next) || SET.determiners.has(next) || SET.prepositions.has(next))) {
+      push('verb-lexical', 'medium', 'Main verb: links the subject to a description, identity or location.')
+    } else {
+      push('verb-auxiliary', 'low', 'This form can be an auxiliary or a main verb. Check whether it supports another verb in this clause.')
+    }
   }
 
   if (w === 'the') {
@@ -354,28 +372,24 @@ function tagWord(ctx: Ctx): Tag[] {
   } else if (w === 'a' || w === 'an') {
     push('article-indefinite', 'high', 'Introduces a referent not yet identified.')
     push('determiner', 'high')
-  } else if (SET.determiners.has(w)) {
+  } else if (SET.determiners.has(w) && (!SET.demonstratives.has(w) || demonstrativeDeterminer)) {
     push('determiner', 'high', 'Introduces and limits a noun phrase.')
   }
 
-  if (SET.demonstratives.has(w)) {
+  if (SET.demonstratives.has(w) && !demonstrativeDeterminer && !complementiser) {
     push('pronoun-demonstrative', 'high', 'A pointing word: it locates its referent.')
   }
-  if (SET.pronouns.has(w)) {
+  if (SET.pronouns.has(w) && !demonstrativeDeterminer && !complementiser) {
     push('pronoun', 'high', 'Stands in for a noun phrase; often a cohesion link.')
   }
 
   if (SET.coordinators.has(w)) {
     push('conjunction-coordinating', 'high', 'Joins two items of equal grammatical rank.')
   }
-  if (SET.subordinators.has(w)) {
-    if (w === 'that' && next && !SET.verbs.has(next)) {
-      push('determiner', 'medium', 'Here "that" looks like a demonstrative rather than a subordinator.')
-    } else {
-      push('conjunction-subordinating', 'high', 'Introduces a dependent clause.')
-    }
+  if (SET.subordinators.has(w) && (!SET.demonstratives.has(w) || complementiser)) {
+    push('conjunction-subordinating', 'medium', 'Introduces a dependent clause; check the following subject and verb.')
   }
-  if (SET.prepositions.has(w)) {
+  if (SET.prepositions.has(w) && !(w === 'to' && (SET.verbs.has(next) || SET.auxiliaries.has(next)))) {
     push('preposition', SET.subordinators.has(w) ? 'low' : 'high', 'Shows a relationship of place, time or manner.')
   }
 
@@ -383,9 +397,9 @@ function tagWord(ctx: Ctx): Tag[] {
   if (SET.degreeAdverbs.has(w)) {
     push('adverb-degree', 'high', 'Scales the word it modifies — an intensifier or a hedge.')
     push('adverb', 'medium')
-  } else if (SET.adverbs.has(w)) {
+  } else if (SET.adverbs.has(w) && !SET.nouns.has(w) && !SET.adjectives.has(w) && !SET.collectiveNouns.has(w) && !SET.abstractNouns.has(w)) {
     push('adverb', 'high', 'Modifies a verb, adjective or another adverb.')
-  } else if (w.endsWith('ly') && w.length > 4) {
+  } else if (w.endsWith('ly') && w.length > 4 && !SET.adjectives.has(w) && !SET.nouns.has(w) && !SET.collectiveNouns.has(w) && !SET.abstractNouns.has(w)) {
     push('adverb', 'medium', 'The -ly suffix usually builds an adverb from an adjective.')
   }
 
@@ -411,12 +425,12 @@ function tagWord(ctx: Ctx): Tag[] {
     push('noun-collective', 'high', 'Singular in form, but names a group.')
     push('noun-common', 'medium')
   }
-  if (SET.abstractNouns.has(w) || ABSTRACT_HINTS.has(w)) {
+  if ((SET.abstractNouns.has(w) || ABSTRACT_HINTS.has(w)) && !(w === 'need' && verbContext)) {
     push('noun-abstract', 'high', 'Names a concept, quality or state rather than a physical thing.')
     push('noun-common', 'medium')
   }
   const nounBase = inflectedNounForm(w)
-  if (SET.nouns.has(w) || nounBase) {
+  if ((SET.nouns.has(w) || nounBase) && !(SET.verbs.has(w) && verbContext)) {
     const base = nounBase ?? w
     push('noun-common', 'high', 'A general name for a class of thing.')
     if (!SET.abstractNouns.has(base)) {
@@ -424,13 +438,16 @@ function tagWord(ctx: Ctx): Tag[] {
     }
   }
 
+  if (w === 'can' && nounContext) push('noun-common', 'medium', 'After a determiner, can names a container.')
+  if (marginalMainVerb && verbContext) push('verb-lexical', 'medium', 'Here this is a main verb taking a complement, rather than a core modal auxiliary.')
+
   /* ------------------------------------------------------------------- verbs */
   const verbBase = inflectedVerbForm(w)
   const afterDeterminer =
     i > 0 &&
     (SET.determiners.has(stripApostrophe(tokens[i - 1].lower)) ||
       SET.adjectives.has(stripApostrophe(tokens[i - 1].lower)))
-  if (SET.verbs.has(w)) {
+  if (SET.verbs.has(w) && !nounContext && !SET.modalVerbs.has(w) && !SET.auxiliaries.has(w)) {
     push(
       'verb-lexical',
       afterDeterminer ? 'low' : 'high',
@@ -454,7 +471,7 @@ function tagWord(ctx: Ctx): Tag[] {
   }
 
   /* --------------------------------------------------------- proper noun rule */
-  const knownProper = PROPER_HINTS.has(w)
+  const knownProper = PROPER_HINTS.has(w) && isCapitalised(raw) && !SET.pronouns.has(w) && !SET.adjectives.has(w)
   const looksProper =
     w.length > 1 &&
     isCapitalised(raw) &&
@@ -495,7 +512,11 @@ function tagWord(ctx: Ctx): Tag[] {
   if (raw.length >= 5) {
     for (const suffix of SUFFIXES) {
       if (w.endsWith(suffix) && w.length - suffix.length >= 3) {
-        push('suffix', 'medium', `The suffix "-${suffix}" ends this word.`)
+        const stem = w.slice(0, -suffix.length)
+        const candidates = [stem, stem + 'e', stem.replace(/i$/, 'y'), stem.replace(/(.)\1$/, '$1')]
+        const knownStem = candidates.some(root => SET.nouns.has(root) || SET.abstractNouns.has(root) || SET.verbs.has(root) || SET.adjectives.has(root))
+        if (!knownStem) continue
+        push('suffix', 'medium', `Possible suffix “-${suffix}”; the remaining stem matches a known word. Check the formation and meaning.`)
         if (
           (suffix === 'tion' || suffix === 'sion' || suffix === 'ment' || suffix === 'ness' ||
             suffix === 'ity' || suffix === 'ance' || suffix === 'ence' || suffix === 'ship' ||
@@ -570,8 +591,8 @@ function tagWord(ctx: Ctx): Tag[] {
 }
 
 
-export function analyse(text: string): Analysed {
-  const tok = tokenize(text)
+export function analyse(text: string, options: TokenizeOptions = {}): Analysed {
+  const tok = tokenize(text, { transcript: options.transcript ?? looksLikeTranscript(text) })
   const { tokens } = tok
   const tags = new Map<number, Tag[]>()
   const groups: FeatureGroup[] = []
@@ -587,7 +608,7 @@ export function analyse(text: string): Analysed {
       if (i + words.length > tokens.length) continue
       let ok = true
       for (let k = 0; k < words.length; k += 1) {
-        if (stripApostrophe(tokens[i + k].lower) !== stripApostrophe(words[k])) {
+        if (tokens[i + k].sentence !== tokens[i].sentence || (k > 0 && /[^\s]/.test(text.slice(tokens[i + k - 1].end, tokens[i + k].start))) || stripApostrophe(tokens[i + k].lower) !== stripApostrophe(words[k])) {
           ok = false
           break
         }
@@ -611,15 +632,13 @@ export function analyse(text: string): Analysed {
 
   /* ------------------------------------------------------------ single words */
   for (let i = 0; i < tokens.length; i += 1) {
-    if (consumed.has(i)) continue
     const found = tagWord({ tokens, i })
     if (found.length) tags.set(i, found)
   }
 
   /* --------------------------------------------------- prepositional phrases */
   for (let i = 0; i < tokens.length; i += 1) {
-    const w = stripApostrophe(tokens[i].lower)
-    const isPrep = SET.prepositions.has(w) || SET.complexPrepositions.has(w)
+    const isPrep = tags.get(i)?.some((tag) => tag.feature === 'preposition')
     if (!isPrep) continue
     const span = [i]
     for (let k = i + 1; k < tokens.length && span.length < 6; k += 1) {
@@ -658,7 +677,7 @@ export function analyse(text: string): Analysed {
           feature: 'alliteration',
           confidence: 'low',
           tokens: run.map((t) => t.index),
-          note: `${run.length} nearby words begin with the same sound.`,
+          note: `${run.length} nearby words begin with the same letter. Check their pronunciation before identifying alliteration.`,
         })
       }
       run = []

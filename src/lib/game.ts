@@ -328,7 +328,7 @@ export function applyScore(
   }
 
   if (feature && outcome) {
-    const stat: FeatureStat = next.featureStats[feature] ?? { found: 0, missed: 0, xp: 0 }
+    const stat: FeatureStat = { ...(next.featureStats[feature] ?? { found: 0, missed: 0, xp: 0 }) }
     if (outcome === 'hit') stat.found += 1
     else stat.missed += 1
     stat.xp += score.xp

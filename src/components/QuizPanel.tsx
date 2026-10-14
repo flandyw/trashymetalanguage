@@ -57,7 +57,7 @@ export default function QuizPanel({
                   disabled={answered}
                   onClick={() => onChoose(i)}
                 >
-                  <span className="quiz__letter">{'ABCD'[i] ?? '?'}</span>
+                  <span className="quiz__letter">{String.fromCharCode(65 + i)}</span>
                   <span>{opt}</span>
                   {answered && isAnswer && <span className="quiz__tick">✓</span>}
                   {answered && isChosen && !isAnswer && <span className="quiz__cross">✕</span>}
@@ -68,10 +68,10 @@ export default function QuizPanel({
         </ol>
 
         {answered && (
-          <div className="quiz__explain">
+          <div className="quiz__explain" role="status">
             <strong>{chosen === q.answer ? 'Correct.' : 'Not quite.'}</strong> {q.explain}
             {q.kind !== 'curated' && (
-              <span className="quiz__kind">auto-generated from the passage metadata</span>
+              <span className="quiz__kind">Passage context</span>
             )}
           </div>
         )}

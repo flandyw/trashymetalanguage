@@ -27,12 +27,12 @@ export const bank01: PassageBank = {
       gold: [
         {
           feature: 'prefix',
-          spans: ['un'],
+          spans: ["unbelievable"],
           note: '"un-" is a bound morpheme that negates the root.',
         },
         {
           feature: 'suffix',
-          spans: ['able'],
+          spans: ["unbelievable"],
           note: '"-able" is a derivational suffix meaning "capable of being".',
         },
         { feature: 'adjective', spans: ['unbelievable'], note: 'Modifies an implied noun.' },
@@ -52,7 +52,7 @@ export const bank01: PassageBank = {
         {
           prompt: 'How many morphemes are in "unbelievable"?',
           options: ['Two', 'Three', 'Four', 'Five'],
-          answer: 2,
+          answer: 1,
           explain: 'un + believ(e) + able = three morphemes: one prefix, one root, one suffix.',
         },
       ],
@@ -371,7 +371,7 @@ export const bank01: PassageBank = {
       difficulty: 2,
       gold: [
         { feature: 'noun-abstract', spans: ['happiness'], note: 'A feeling you cannot touch.' },
-        { feature: 'suffix', spans: ['ness'], note: '"-ness" turns an adjective into an abstract noun.' },
+        { feature: 'suffix', spans: ["happiness"], note: '"-ness" turns an adjective into an abstract noun.' },
         {
           feature: 'noun-common',
           spans: ['happiness'],

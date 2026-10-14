@@ -161,12 +161,11 @@ export const bank13: PassageBank = {
       gold: [
         {
           feature: 'determiner',
-          spans: ['second'],
+          spans: ["second","No"],
           note: 'An ordinal numeral, repeated so that two losses are heard as one.',
         },
         { feature: 'noun-common', spans: ['planet', 'ground'] },
         { feature: 'noun-abstract', spans: ['chance'] },
-        { feature: 'determiner', spans: ['No'] },
         { feature: 'article-definite', spans: ['the'] },
         { feature: 'verb-lexical', spans: ['Vote', 'burning'] },
         { feature: 'verb-auxiliary', spans: ['is'] },
@@ -222,14 +221,13 @@ export const bank13: PassageBank = {
       lengthTier: 2,
       difficulty: 2,
       gold: [
-        { feature: 'determiner', spans: ['400'] },
+        { feature: 'determiner', spans: ["400","your"] },
         {
           feature: 'contraction',
           spans: ['You\u2019re', 'Don\u2019t', 'you\u2019ve'],
           note: 'Three contractions in two sentences: the single fastest signal that this text wants to sound spoken.',
         },
         { feature: 'pronoun-demonstrative', spans: ['this'] },
-        { feature: 'determiner', spans: ['your'] },
         { feature: 'adjective-superlative', spans: ['best'], note: 'Best turns a statistic into a personal record to beat.' },
         { feature: 'noun-common', spans: ['steps', 'day', 'month'] },
         { feature: 'preposition', spans: ['from'] },
@@ -291,7 +289,7 @@ export const bank13: PassageBank = {
         { feature: 'verb-lexical', spans: ['Put', 'number', 'approved'] },
         { feature: 'noun-common', spans: ['box', 'vote', 'card'] },
         { feature: 'adjective', spans: ['first'] },
-        { feature: 'determiner', spans: ['every', 'your', 'This'] },
+        { feature: 'determiner', spans: ["every","your","This","14"] },
         { feature: 'verb-auxiliary', spans: ['is'] },
         { feature: 'verb-modal', spans: ['must'], note: 'The strongest modal of obligation. There is no polite alternative offered.' },
         { feature: 'preposition', spans: ['on', 'by'] },
@@ -300,7 +298,6 @@ export const bank13: PassageBank = {
           spans: ['or'],
           note: 'Or coordinates a consequence: follow the instruction, or lose the vote.',
         },
-        { feature: 'determiner', spans: ['14'] },
         { feature: 'connotation', spans: ['wasted'], note: 'Not lost or informal — wasted, which implies carelessness as well as loss.' },
         { feature: 'pronoun', spans: ['You'], note: 'Direct second-person address makes the instruction personal.' },
       ],
@@ -362,9 +359,7 @@ export const bank13: PassageBank = {
         { feature: 'article-definite', spans: ['the'] },
         { feature: 'adverb', spans: ['today'], note: 'A time adverb used as an urgency device — inspect, and inspect now.' },
         { feature: 'verb-lexical', spans: ['Inspect'] },
-        { feature: 'idiom', spans: ['Renovator\u2019s dream'], note: 'So predictable in listings that it has lost almost all meaning.' },
-        { feature: 'determiner', spans: ['three'], note: 'A cardinal numeral folded into a compound adjective.' },
-      ],
+        { feature: 'idiom', spans: ['Renovator\u2019s dream'], note: 'So predictable in listings that it has lost almost all meaning.' },],
       quiz: [
         {
           prompt: 'Why does the question "Renovator\u2019s dream or forever home?" work as persuasion?',

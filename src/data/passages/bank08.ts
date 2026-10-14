@@ -492,13 +492,8 @@ export const bank08: PassageBank = {
         },
         {
           feature: 'compounding',
-          spans: ['timetable'],
-          note: 'A compound noun formed by joining two free morphemes.',
-        },
-        {
-          feature: 'compounding',
-          spans: ['public transport'],
-          note: 'Two words functioning as one noun, and the topic of the whole paragraph.',
+          spans: ["timetable","public transport"],
+          note: "A compound noun formed by joining two free morphemes. Two words functioning as one noun, and the topic of the whole paragraph.",
         },
         {
           feature: 'verb-modal',
@@ -1292,7 +1287,7 @@ export const bank08: PassageBank = {
         },
         {
           feature: 'suffix',
-          spans: ['less'],
+          spans: ["rizzless"],
           note: '"Less" is a bound morpheme meaning without — the productive suffix of English negation.',
         },
         {

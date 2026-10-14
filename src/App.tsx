@@ -59,7 +59,7 @@ export default function App() {
   })
   const [customText, setCustomText] = useState<string | null>(null)
   const [layers, setLayers] = useState<Set<string>>(new Set())
-  const [source, setSource] = useState<'auto' | 'gold'>('auto')
+  const [source, setSource] = useState<'auto' | 'gold'>('gold')
   const [selected, setSelected] = useState<{ index: number; anchor: Anchor } | null>(null)
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -72,7 +72,7 @@ export default function App() {
   const passage = passageById(passageId) ?? ALL_PASSAGES[0]
   const text = customText ?? passage.text
   const preparedGold = useMemo(() => prepare(passage), [passage])
-  const analysed = useMemo(() => analyse(text), [text])
+  const analysed = useMemo(() => analyse(text, { transcript: customText ? undefined : passage.transcript }), [text, customText, passage.transcript])
 
   useEffect(() => {
     saveProfile(profile)
@@ -99,10 +99,11 @@ export default function App() {
       score: ReturnType<typeof scoreHit>,
       featureId?: string,
       outcome?: 'hit' | 'miss',
+      updateProgress: (current: Profile) => Profile = (current) => current,
     ) => {
       // Scoring happens outside the state updater so a re-invoked updater can
       // never fire the toasts (or the sound) twice. Exactly one award per event.
-      const applied = applyScore(profile, score, featureId, outcome)
+      const applied = applyScore(updateProgress(profile), score, featureId, outcome)
       setProfile(applied.profile)
       for (const b of applied.newBadges) {
         pushToast(`${b.icon} ${b.label} — ${b.blurb}`, 'badge')
@@ -140,6 +141,7 @@ export default function App() {
       if (next === 'hunt' && !customText) {
         setHunt((h) => (h && h.passageId === passageId ? h : makeHunt(passage, profile)))
       }
+      if (next !== 'explore' && customText) setCustomText(null)
       setView(next)
       setSelected(null)
     },
@@ -177,8 +179,7 @@ export default function App() {
           : hit
 
         playHit(profile.combo + 1)
-        award(total, hunt.feature, 'hit')
-        setProfile((p) => ({
+        award(total, hunt.feature, 'hit', (p) => ({
           ...p,
           combo: p.combo + 1,
           comboBest: Math.max(p.comboBest, p.combo + 1),
@@ -198,12 +199,11 @@ export default function App() {
       const other = preparedGold.tokenFeatures.get(tokenIndex) ?? []
       const otherLabel = other.map((id) => feature(id)?.label).filter(Boolean) as string[]
       playMiss()
-      setProfile((p) => ({
+      award(scoreMiss(), hunt.feature, 'miss', (p) => ({
         ...p,
         combo: 0,
         totalWrong: p.totalWrong + 1,
       }))
-      award(scoreMiss(), hunt.feature, 'miss')
       setHunt({ ...hunt, misses: hunt.misses + 1, wrongToken: tokenIndex })
       window.setTimeout(() => {
         setHunt((h) => (h && h.wrongToken === tokenIndex ? { ...h, wrongToken: null } : h))
@@ -211,7 +211,7 @@ export default function App() {
       if (otherLabel.length) {
         pushToast(`Not a ${feature(hunt.feature)?.label.toLowerCase()} — the key has this as ${otherLabel.slice(0, 2).join(' / ')}`, 'info')
       } else {
-        pushToast('Not in the answer key for this target', 'info')
+        pushToast('This word is not one of the selected examples. Check the definition and try another.', 'info')
       }
     },
     [
@@ -239,8 +239,7 @@ export default function App() {
     const pick = remaining[0]
     const tokens = hunt.occurrences[pick].tokens
     setHunt({ ...hunt, hinted: [...hunt.hinted, pick], hintsUsed: hunt.hintsUsed + 1 })
-    award(scoreHint())
-    setProfile((p) => ({ ...p, hintsUsed: p.hintsUsed + 1 }))
+    award(scoreHint(), undefined, undefined, (p) => ({ ...p, hintsUsed: p.hintsUsed + 1 }))
     const words = tokens.map((t) => analysed.tok.tokens[t]?.text).filter(Boolean).join(' ')
     pushToast(`Look near “${words || 'the highlighted stretch'}”`, 'info')
   }, [hunt, award, analysed, pushToast])
@@ -270,6 +269,8 @@ export default function App() {
       const target = passageById(id)
       if (!target) return
       setPassageId(id)
+      setSource('gold')
+      setLayers(new Set())
       setSelected(null)
       setShowAnalysis(false)
       setQuizIndex(0)
@@ -293,7 +294,12 @@ export default function App() {
     if (source === 'gold' && !customText) {
       for (const g of preparedGold.gold) map.set(g.feature, g.occurrences.length)
     } else {
-      for (const [id, tokens] of analysed.featureTokens) map.set(id, tokens.length)
+      for (const tags of analysed.tags.values()) {
+        for (const tag of tags) if (tag.confidence !== 'low') map.set(tag.feature, (map.get(tag.feature) ?? 0) + 1)
+      }
+      for (const group of analysed.groups) {
+        if (group.confidence !== 'low') map.set(group.feature, (map.get(group.feature) ?? 0) + 1)
+      }
     }
     return map
   }, [source, customText, preparedGold, analysed])
@@ -323,7 +329,7 @@ export default function App() {
     }
     for (const [token, tags] of analysed.tags) {
       const keep = tags
-        .filter((t) => t.confidence !== 'low' || layers.size === 0)
+        .filter((t) => t.confidence !== 'low')
         .filter((t) => layers.size === 0 || layers.has(t.feature))
         .map((t) => t.feature)
       if (keep.length) map.set(token, keep)
@@ -339,7 +345,7 @@ export default function App() {
       }
     } else {
       for (const g of analysed.groups) {
-        if (!layers.has(g.feature)) continue
+        if (g.confidence === 'low' || !layers.has(g.feature)) continue
         for (const t of g.tokens) {
           const list = map.get(t) ?? []
           if (!list.includes(g.feature)) list.push(g.feature)
@@ -405,9 +411,9 @@ export default function App() {
   const featuresInText = useMemo(() => {
     const ids = new Set<string>()
     if (source === 'gold' && !customText) preparedGold.gold.forEach((g) => ids.add(g.feature))
-    else analysed.featureTokens.forEach((_, id) => ids.add(id))
+    else counts.forEach((_, id) => ids.add(id))
     return ids
-  }, [source, customText, preparedGold, analysed])
+  }, [source, customText, preparedGold, counts])
 
   const practiseFeature = useCallback(
     (featureId: string) => {
@@ -433,6 +439,7 @@ export default function App() {
         profile={profile}
         onOpenProgress={() => switchView('progress')}
         onReset={() => {
+          if (!window.confirm('Clear all saved XP, badges and practice history? This cannot be undone.')) return
           setProfile(resetProfile())
           pushToast('Progress cleared', 'info')
         }}
@@ -441,17 +448,18 @@ export default function App() {
       <nav className="tabs" aria-label="Modes">
         {(
           [
-            ['hunt', '🎯 Hunt'],
-            ['explore', '🔬 Explore'],
-            ['quiz', '🧠 Analyse'],
-            ['library', '📚 Library'],
-            ['progress', '🏆 Progress'],
+            ['hunt', 'Practise'],
+            ['explore', 'Explore'],
+            ['quiz', 'Quiz'],
+            ['library', 'Passages'],
+            ['progress', 'Progress'],
           ] as [View, string][]
         ).map(([id, label]) => (
           <button
             key={id}
             type="button"
             className={`tab${view === id ? ' tab--on' : ''}`}
+            aria-current={view === id ? 'page' : undefined}
             onClick={() => switchView(id)}
           >
             {label}
@@ -462,11 +470,20 @@ export default function App() {
           className="tab tab--sound"
           onClick={() => setSound((s) => !s)}
           title="Toggle sound"
+          aria-label={sound ? 'Mute sounds' : 'Enable sounds'}
           aria-pressed={sound}
         >
           {sound ? '🔊' : '🔇'}
         </button>
       </nav>
+
+      <div className="mode-intro">
+        <div><span className="eyebrow">VCE ENGLISH LANGUAGE</span>
+          <h2>{view === 'hunt' ? 'Notice the language. Explain the choice.' : view === 'explore' ? 'Look closer at how language works.' : view === 'quiz' ? 'Turn observations into analysis.' : view === 'library' ? 'Find your next text.' : 'Your practice, over time.'}</h2>
+          <p>{view === 'hunt' ? 'Read the target below, then select its examples in the passage. For a phrase, select any word inside it.' : view === 'explore' ? 'Choose a feature to highlight its examples, or select a word to read its explanation.' : view === 'quiz' ? 'Read the passage, choose an answer, and use the explanation to check your reasoning.' : view === 'library' ? 'Choose a short warm-up or work through a passage in context.' : 'Revisit the features that need more practice.'}</p>
+        </div>
+        <button className="btn" onClick={() => switchView(view === 'library' ? 'hunt' : 'library')}>{view === 'library' ? 'Resume practice' : 'Browse passages →'}</button>
+      </div>
 
       {view === 'progress' ? (
         <ProgressPanel
@@ -504,20 +521,28 @@ export default function App() {
                 </h2>
                 <p>
                   {customText
-                    ? `${wordCount(customText)} words · auto-tagged`
-                    : `${passage.source} · ${wordCount(passage.text)} words · difficulty ${passage.difficulty}/5`}
+                    ? `${wordCount(customText)} words · automatic suggestions`
+                    : `${passage.source} · ${wordCount(passage.text)} ${wordCount(passage.text) === 1 ? 'word' : 'words'} · difficulty ${passage.difficulty}/5`}
                 </p>
               </div>
               <button
                 type="button"
                 className="btn btn--ghost btn--tiny"
-                onClick={() => (customText ? setCustomText(null) : goToPassage(nextPassageId(passageId), view))}
+                onClick={() => goToPassage(customText ? passageId : nextPassageId(passageId), view)}
               >
                 {customText ? 'Curated text' : 'Next →'}
               </button>
             </div>
 
+            {view === 'hunt' && hunt && !customText && (
+              <div className="target-brief">
+                <span className="eyebrow">YOUR TARGET · {hunt.occurrences.length} EXAMPLE{hunt.occurrences.length === 1 ? '' : 'S'}</span>
+                <h2>{feature(hunt.feature)?.label}</h2>
+                <p>{feature(hunt.feature)?.short}</p>
+              </div>
+            )}
             <div className="board__text" data-mode={view}>
+              <p className="reading-label">{view === 'hunt' ? 'SELECT THE EXAMPLES' : 'READ & INVESTIGATE'}<span>{customText || source === 'auto' && view === 'explore' ? 'Automatic suggestions' : 'Passage answer key'}</span></p>
               <HighlightedText
                 tok={customText ? analysed.tok : preparedGold.tok}
                 painted={painted}
@@ -554,7 +579,9 @@ export default function App() {
                   const correct = i === q.answer
                   setQuizAnswers((prev) => new Map(prev).set(quizIndex, i))
                   setQuizScore((s) => ({ correct: s.correct + (correct ? 1 : 0), answered: s.answered + 1 }))
-                  setProfile((p) => ({
+                  award(
+                    correct ? scoreQuizCorrect(passage.difficulty, profile.combo) : scoreQuizWrong(),
+                    undefined, undefined, (p) => ({
                     ...p,
                     quizzesAnswered: p.quizzesAnswered + 1,
                     quizzesCorrect: p.quizzesCorrect + (correct ? 1 : 0),
@@ -563,9 +590,6 @@ export default function App() {
                   }))
                   if (correct) playHit(profile.combo + 1)
                   else playMiss()
-                  award(
-                    correct ? scoreQuizCorrect(passage.difficulty, profile.combo) : scoreQuizWrong(),
-                  )
                 }}
                 onNext={() => setQuizIndex((i) => Math.min(i + 1, questions.length - 1))}
                 onPrev={() => setQuizIndex((i) => Math.max(i - 1, 0))}
@@ -613,7 +637,7 @@ export default function App() {
                     <div>
                       <dt>Sentence type</dt>
                       <dd>
-                        {feature(passage.dominantSentenceType)?.label} ·{' '}
+                        {passage.sentenceStructure !== 'fragment' && <>{feature(passage.dominantSentenceType)?.label} · </>}
                         {feature(passage.sentenceStructure)?.label}
                       </dd>
                     </div>
@@ -647,15 +671,17 @@ export default function App() {
               source={source}
               onSourceChange={(s) => {
                 setSource(s)
-                if (s === 'gold') setLayers(new Set())
+                setLayers(new Set())
+                setSelected(null)
               }}
               hasCustomText={!!customText}
               onCustomText={(t) => {
                 setCustomText(t)
+                setSelected(null)
                 setSource('auto')
                 setLayers(new Set())
               }}
-              onClearCustomText={() => setCustomText(null)}
+              onClearCustomText={() => { setCustomText(null); setSource('gold'); setLayers(new Set()); setSelected(null) }}
             />
           )}
         </main>
@@ -663,8 +689,7 @@ export default function App() {
 
       {view === 'explore' && featuresInText.size > 0 && (
         <footer className="appfoot">
-          {featuresInText.size} distinct features detected in this text · click any word for its
-          full analysis
+          {featuresInText.size} features {source === 'gold' && !customText ? 'annotated in the passage key' : 'suggested automatically'} · select a word to investigate
         </footer>
       )}
 
@@ -684,6 +709,7 @@ export default function App() {
               token={token}
               tags={selectedTags}
               goldFeatures={revealGold ? selectedGold : []}
+              goldNotes={Object.fromEntries(preparedGold.gold.map(g => [g.feature, g.note]))}
               anchor={selected.anchor}
               onClose={() => setSelected(null)}
               paintGold={revealGold}

@@ -1044,14 +1044,9 @@ export const bank09: PassageBank = {
           spans: ['i’m', 'i’ve', 'it’s', 'you’re', 'i’ll'],
         },
         {
-          feature: 'verb-modal',
-          spans: ['need'],
-          note: 'A modal verb of necessity that also behaves like an ordinary verb, so it can take -ed and -ing.',
-        },
-        {
           feature: 'verb-lexical',
-          spans: ['trying', 'hit', 'drop'],
-          note: '"hit diamond" and "drop a yeah" both use verbs with shifted, in-group senses.',
+          spans: ['need', 'trying', 'hit', 'drop'],
+          note: '“Need” takes the noun phrase “at least three people”, so it is a main verb here. “Hit diamond” and “drop a yeah” use verbs with specialised gaming senses.',
         },
         {
           feature: 'verb-phrasal',
@@ -1125,7 +1120,7 @@ export const bank09: PassageBank = {
         },
         {
           feature: 'jargon',
-          spans: ['shotgun', 'map', 'rotate', 'circle'],
+          spans: ["shotgun","map","rotate","circle’s"],
           note: 'Game vocabulary: "the circle" and "rotate" are meaningless to an outsider.',
         },
         {

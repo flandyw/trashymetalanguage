@@ -37,18 +37,7 @@ export const bank10: PassageBank = {
         },
         {
           feature: 'noun-common',
-          spans: [
-            'council',
-            'residents',
-            'traders',
-            'developer',
-            'facade',
-            'plaza',
-            'Opponents',
-            'cars',
-            'streets',
-            'objections',
-          ],
+          spans: ["council","residents","traders","facade","plaza","Opponents","cars","streets","objections"],
         },
         { feature: 'noun-concrete', spans: ['tower', 'pool hall', 'primary school', 'glass'] },
         {
@@ -58,7 +47,7 @@ export const bank10: PassageBank = {
         },
         {
           feature: 'verb-lexical',
-          spans: ['approved', 'follows', 'demolish', 'replace', 'argue', 'overshadow', 'add'],
+          spans: ["approved","follows","demolished","replaced","argue","overshadow","add"],
         },
         { feature: 'verb-modal', spans: ['would', 'will'], note: 'Marking prediction and future fact.' },
         { feature: 'verb-auxiliary', spans: ['has'], note: '"has approved" — the auxiliary carries the perfect tense.' },
@@ -235,10 +224,9 @@ export const bank10: PassageBank = {
         { feature: 'metaphor', spans: ['snatched'], note: 'A narrow win is described as if it were grabbed from someone else.' },
         { feature: 'verb-lexical', spans: ['snatched', 'kicked', 'lifts'] },
         { feature: 'adjective', spans: ['two-point', 'packed', 'sealing'] },
-        { feature: 'determiner', spans: ['ninety'] },
+        { feature: 'determiner', spans: ["ninety","a","the"] },
         { feature: 'adverb', spans: ['last night'] },
         { feature: 'preposition', spans: ['over', 'at', 'with', 'on', 'to'] },
-        { feature: 'determiner', spans: ['a', 'the'] },
         {
           feature: 'anaphora',
           spans: ['The result'],
@@ -360,9 +348,9 @@ export const bank10: PassageBank = {
       difficulty: 3,
       gold: [
         { feature: 'noun-proper', spans: ['Ballarat', 'Morning Report'] },
-        { feature: 'noun-common', spans: ['teacher', 'schools', 'department', 'government', 'funding', 'model'] },
+        { feature: 'noun-common', spans: ["teacher","schools","department","government’s","funding","model"] },
         { feature: 'contraction', spans: ['it’s'], note: 'One contraction is enough to signal speech rather than writing.' },
-        { feature: 'determiner', spans: ['seven'] },
+        { feature: 'determiner', spans: ["seven","a","the"] },
         { feature: 'adjective', spans: ['high'] },
         { feature: 'verb-lexical', spans: ['leaves', 'ask'] },
         {
@@ -373,7 +361,6 @@ export const bank10: PassageBank = {
         { feature: 'conjunction-coordinating', spans: ['and'] },
         { feature: 'conjunction-subordinating', spans: ['whether'] },
         { feature: 'preposition', spans: ['on', 'without', 'to'] },
-        { feature: 'determiner', spans: ['a', 'the'] },
         {
           feature: 'noun-abstract',
           spans: ['shortage'],
@@ -714,7 +701,7 @@ export const bank10: PassageBank = {
         { feature: 'verb-modal', spans: ['can'], note: 'A modal of capability, not certainty. In science writing, "can" is much safer than "will".' },
         { feature: 'verb-lexical', spans: ['break down', 'grew', 'measured', 'makes', 'planned'] },
         { feature: 'verb-auxiliary', spans: ['have', 'are'] },
-        { feature: 'adjective', spans: ['common', 'industrial', 'unusual', 'stable', 'large-scale', 'viable'] },
+        { feature: 'adjective', spans: ["common","industrial","stable","large-scale","viable"] },
         { feature: 'adverb', spans: ['widely', 'unusually', 'potentially'], note: '"potentially" is a hedge that protects the scientist and informs the reader.' },
         { feature: 'determiner', spans: ['14', 'three'] },
         { feature: 'preposition', spans: ['at', 'in', 'on', 'of', 'under'] },

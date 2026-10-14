@@ -614,7 +614,7 @@ export const bank06: PassageBank = {
         },
         {
           feature: 'suffix',
-          spans: ['ly'],
+          spans: ["commonly"],
           note: 'The -ly suffix is the most productive adverb-forming morpheme in English.',
         },
         {

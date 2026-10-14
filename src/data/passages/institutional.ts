@@ -321,7 +321,7 @@ export const bank11: PassageBank = {
         { feature: "verb-lexical", spans: ["introduces", "include", "given", "complete"] },
         { feature: "verb-modal", spans: ["will"], note: "Future obligation framed as fact." },
         { feature: "adjective", spans: ["principal", "particular", "written"] },
-        { feature: "determiner", spans: ["two", "one"] },
+        { feature: "determiner", spans: ["two","one","this"] },
         {
           feature: "jargon",
           spans: ["phonetics", "morphology", "syntax", "semantics", "discourse"],
@@ -329,7 +329,6 @@ export const bank11: PassageBank = {
         },
         { feature: "noun-common", spans: ["unit", "students", "methods", "Topics", "assignments", "examination"] },
         { feature: "preposition", spans: ["of", "to", "with"] },
-        { feature: "determiner", spans: ["this"] },
         { feature: "conjunction-coordinating", spans: ["and"] },
         {
           feature: "noun-proper",
@@ -572,7 +571,7 @@ export const bank11: PassageBank = {
       lengthTier: 3,
       difficulty: 5,
       gold: [
-        { feature: "determiner", spans: ["14", "28"], note: "Exact dates and deadlines — numerals make the order enforceable." },
+        { feature: "determiner", spans: ["14","28","neither","no","either"], note: "Exact dates and deadlines — numerals make the order enforceable. ‘Neither…no…either’ — negative determiners that tighten the scope of the finding." },
         {
           feature: "noun-abstract",
           spans: ["circumstances", "effect", "prejudice", "termination"],
@@ -601,11 +600,6 @@ export const bank11: PassageBank = {
         { feature: "conjunction-coordinating", spans: ["and"], note: "Chains the findings into one long clause." },
         { feature: "adjective", spans: ["relevant"], note: "‘Relevant’ does implicit legal work: only this provision matters." },
         { feature: "pronoun-demonstrative", spans: ["those"], note: "Points back to the circumstances just described." },
-        {
-          feature: "determiner",
-          spans: ["neither", "no", "either"],
-          note: "‘Neither…no…either’ — negative determiners that tighten the scope of the finding.",
-        },
         {
           feature: "cohesive-repetition",
           spans: ["landlord", "tribunal"],
@@ -783,10 +777,9 @@ export const bank11: PassageBank = {
         { feature: "preposition", spans: ["for", "from", "within", "on"] },
         {
           feature: "determiner",
-          spans: ["30", "4,820", "21", "13 28 61"],
+          spans: ["30","4,820","21","13 28 61","Our","this","an"],
           note: "Exact figures — the amount, the date, the deadline, the phone line. Precision is the letter’s authority.",
         },
-        { feature: "determiner", spans: ["Our", "this", "an"] },
         { feature: "adjective", spans: ["amended", "incorrect"] },
         {
           feature: "conjunction-subordinating",
@@ -890,13 +883,8 @@ export const bank11: PassageBank = {
         },
         {
           feature: "compounding",
-          spans: ["attendance register"],
-          note: "Two nouns joined into a single new one — the everyday workhorse of workplace writing.",
-        },
-        {
-          feature: "compounding",
-          spans: ["warehouse"],
-          note: "ware + house: an old compound where the second element has weakened into a general noun.",
+          spans: ["attendance register","warehouse"],
+          note: "Two nouns joined into a single new one — the everyday workhorse of workplace writing. ware + house: an old compound where the second element has weakened into a general noun.",
         },
         {
           feature: "preposition",
@@ -1015,7 +1003,7 @@ export const bank11: PassageBank = {
         },
         {
           feature: "preposition",
-          spans: ["about", "for", "of", "to", "at", "On"],
+          spans: ["about","for","to","at","On"],
           note: "A dense run of prepositional phrases, each one adding a polite condition.",
         },
         { feature: "conjunction-coordinating", spans: ["and", "or"], note: "‘Faulty or were not as described’ sets the only two paths to a refund." },

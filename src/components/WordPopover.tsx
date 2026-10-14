@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Tag } from '../lib/tagger'
-import { PREFIXES, SUFFIXES } from '../lib/lexicon'
-import { feature, categoryMeta } from '../lib/taxonomy'
+import { feature, subsystemMeta } from '../lib/taxonomy'
 import type { Token } from '../lib/tokenize'
 
 export interface Anchor {
@@ -14,6 +13,7 @@ interface Props {
   token: Token
   tags: Tag[]
   goldFeatures: string[]
+  goldNotes: Record<string, string | undefined>
   anchor: Anchor
   onClose: () => void
   onToggleLayer: (featureId: string) => void
@@ -22,25 +22,11 @@ interface Props {
 
 const CONFIDENCE_ORDER = { high: 0, medium: 1, low: 2 } as const
 
-/** A rough morpheme split, only ever shown when both parts are real affixes. */
-function morphology(word: string): { prefix?: string; suffix?: string; root: string } | null {
-  const w = word.toLowerCase()
-  if (w.length < 6) return null
-  const prefix = PREFIXES.find((p) => w.startsWith(p) && w.length - p.length >= 3)
-  const suffix = [...SUFFIXES]
-    .sort((a, b) => b.length - a.length)
-    .find((s) => w.endsWith(s) && w.length - s.length >= 3)
-  if (!prefix && !suffix) return null
-  const start = prefix ? prefix.length : 0
-  const end = suffix ? w.length - suffix.length : w.length
-  if (end <= start) return null
-  return { prefix, suffix, root: w.slice(start, end) }
-}
-
 export default function WordPopover({
   token,
   tags,
   goldFeatures,
+  goldNotes,
   anchor,
   onClose,
   onToggleLayer,
@@ -64,17 +50,21 @@ export default function WordPopover({
   }, [anchor, tags.length, goldFeatures.length])
 
   useEffect(() => {
+    const onOutside = (e: PointerEvent) => {
+      const target = e.target as HTMLElement
+      if (!ref.current?.contains(target) && !target.closest('.word')) onClose()
+    }
+    document.addEventListener('pointerdown', onOutside)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onOutside) }
   }, [onClose])
 
   const sorted = [...tags].sort(
     (a, b) => CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence],
   )
-  const morph = morphology(token.text)
 
   return (
     <div
@@ -96,17 +86,7 @@ export default function WordPopover({
         </button>
       </header>
 
-      {morph && (
-        <div className="popover__morph">
-          <span className="chip chip--morph">morphemes</span>
-          <code>
-            {morph.prefix && <em className="m-prefix">{morph.prefix}</em>}
-            <strong>{morph.root}</strong>
-            {morph.suffix && <em className="m-suffix">{morph.suffix}</em>}
-          </code>
-        </div>
-      )}
-
+      {paintGold && goldFeatures.length === 0 && <p className="popover__empty">This word has no annotation in the passage key. The key selects teaching examples; it is not an exhaustive analysis.</p>}
       {paintGold && goldFeatures.length > 0 && (
         <section className="popover__section">
           <h4>
@@ -127,6 +107,8 @@ export default function WordPopover({
                   >
                     {f.label}
                   </button>
+                  <p className="tag-card__detail">{goldNotes[id] ?? f.short}</p>
+                  {f.test && <p className="tag-card__test">Check: {f.test}</p>}
                 </li>
               )
             })}
@@ -134,10 +116,9 @@ export default function WordPopover({
         </section>
       )}
 
-      {sorted.length === 0 ? (
+      {!paintGold && (sorted.length === 0 ? (
         <p className="popover__empty">
-          The auto-tagger found nothing it can name with confidence here. That is normal for
-          unusual words — name it yourself and move on.
+          No automatic suggestion for this word. Read it in its sentence and use the feature definitions to test your interpretation.
         </p>
       ) : (
         <section className="popover__section">
@@ -167,13 +148,13 @@ export default function WordPopover({
                   <p className="tag-card__examples">
                     e.g. {f.examples.slice(0, 3).join(' · ')}
                   </p>
-                  <p className="tag-card__cat">{categoryMeta(f.category).label}</p>
+                  <p className="tag-card__cat">{subsystemMeta(f.subsystem).label}</p>
                 </li>
               )
             })}
           </ul>
         </section>
-      )}
+      ))}
     </div>
   )
 }

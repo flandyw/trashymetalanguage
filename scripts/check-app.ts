@@ -48,9 +48,9 @@ console.log('\n1. Tokeniser round-trip on every passage')
 {
   let checked = 0
   for (const p of ALL_PASSAGES) {
-    const tok = tokenize(p.text)
+    const tok = tokenize(p.text, { transcript: p.transcript })
     const rebuilt = tok.segments
-      .map((s) => (s.kind === 'text' ? s.value : tok.tokens[s.token].text))
+      .map((s) => (s.kind !== 'word' ? s.value : tok.tokens[s.token].text))
       .join('')
     if (rebuilt !== p.text) {
       fail(`${p.id}: rendering the segments does not reproduce the text`)
@@ -85,7 +85,7 @@ console.log('\n2. Simulated hunts across all passages and every gold feature')
 
   for (const p of ALL_PASSAGES) {
     const prepared = prepare(p)
-    const tokenCount = tokenize(p.text).tokens.length
+    const tokenCount = tokenize(p.text, { transcript: p.transcript }).tokens.length
 
     // The picker must never hand back a target with no occurrences.
     const picked = makeHunt(p, base)
@@ -156,7 +156,7 @@ console.log('\n3. Every quiz question has one correct, reachable answer')
   let passages = 0
   for (const p of ALL_PASSAGES) {
     const built = buildQuestions(p)
-    if (built.length < 3) fail(`${p.id}: only ${built.length} questions`)
+    if (built.length < (p.lengthTier === 0 ? 1 : 3)) fail(`${p.id}: only ${built.length} questions`)
     for (const q of built) {
       questions += 1
       if (q.options.length < 2) fail(`${p.id}: a question has ${q.options.length} options`)
@@ -200,7 +200,7 @@ console.log('\n4. Auto-tagger over every passage and every gold span')
   const unknown = new Set<string>()
   const invoked = new Set<string>()
   for (const p of ALL_PASSAGES) {
-    const a = analyse(p.text)
+    const a = analyse(p.text, { transcript: p.transcript })
     tagged += 1
     for (const list of a.tags.values()) {
       for (const t of list) {
@@ -216,7 +216,7 @@ console.log('\n4. Auto-tagger over every passage and every gold span')
       if (g.tokens.length === 0) unknown.add(`${g.feature}:empty-span`)
     }
     for (const label of p.gold) invoked.add(label.feature)
-    if (a.tok.tokens.length !== tokenize(p.text).tokens.length) {
+    if (a.tok.tokens.length !== tokenize(p.text, { transcript: p.transcript }).tokens.length) {
       fail(`${p.id}: tagger tokenised a different number of tokens`)
     }
   }

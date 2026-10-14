@@ -1,4 +1,4 @@
-import { categoryMeta, feature } from '../lib/taxonomy'
+import { feature } from '../lib/taxonomy'
 import type { Passage } from '../lib/passages'
 
 export interface HuntInfo {
@@ -35,17 +35,11 @@ export default function HuntPanel({
 }: Props) {
   const f = feature(hunt.feature)
   if (!f) return null
-  const cat = categoryMeta(f.category)
   const pct = hunt.total === 0 ? 0 : Math.round((hunt.found / hunt.total) * 100)
 
   return (
     <section className="hunt" style={{ '--hl': f.colour } as React.CSSProperties}>
       <div className="hunt__prompt">
-        <span className="hunt__cat">{cat.label}</span>
-        <h2>
-          Find every <em>{f.label.toLowerCase()}</em>
-        </h2>
-        <p className="hunt__def">{f.short}</p>
         <p className="hunt__hint-line">
           <strong>Hint:</strong> {f.hint}
         </p>
@@ -78,7 +72,7 @@ export default function HuntPanel({
         <div className={`hunt__result${hunt.perfect ? ' hunt__result--perfect' : ''}`}>
           <strong>{hunt.perfect ? 'Flawless run!' : hunt.revealed ? 'Revealed' : 'Target cleared'}</strong>
           <span>
-            {hunt.misses} wrong click{hunt.misses === 1 ? '' : 's'} · {hunt.hintsUsed} hint
+            {hunt.misses} attempt to revisit{hunt.misses === 1 ? '' : 's'} · {hunt.hintsUsed} hint
             {hunt.hintsUsed === 1 ? '' : 's'}
           </span>
           <div className="row">
@@ -92,14 +86,14 @@ export default function HuntPanel({
         </div>
       ) : (
         <div className="hunt__actions">
-          <button type="button" className="btn" onClick={onHint} title={`Costs ${hintCost} XP`}>
-            💡 Reveal one ({hintCost} XP)
+          <button type="button" className="btn" onClick={onHint} disabled={hunt.hintsUsed >= hunt.total} title={`Costs ${hintCost} XP`}>
+            Reveal one ({hintCost} XP)
           </button>
           <button type="button" className="btn" onClick={onRevealAll}>
-            🏳️ Show me all
+            Show answers
           </button>
           <button type="button" className="btn btn--ghost" onClick={onNewTarget}>
-            🎲 Different feature
+            Change feature
           </button>
           <button type="button" className="btn btn--ghost" onClick={onNextPassage}>
             Skip passage

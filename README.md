@@ -1,32 +1,23 @@
-# React + TypeScript + Vite
+# Metalanguage Highlighter
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A browser-based VCE English Language practice app with 170 constructed texts, targeted feature hunts, passage analysis, quizzes and locally saved progress.
 
-Currently, two official plugins are available:
+Run with Bun:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+bun install
+bun --bun run dev --host 0.0.0.0
+bun run build
+bun run check
+bun run lint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Use a current supported Node release (22.12+), or run Vite with Bun as above.
+
+Practise starts with short texts in context. Select a word inside a target example to record it; a phrase counts as one example. Explore opens on the passage answer key, with optional automatic suggestions and a custom-text input. The library searches passage content and feature names.
+
+The passage key contains selected teaching examples, not an exhaustive linguistic analysis. Automatic suggestions use local word lists and grammatical context. They are fallible, are labelled separately, and never determine challenge scores. Isolated-word exercises use their specific questions rather than asking learners to infer a text’s register or function without context. Curriculum unit, area and text-type metadata remain optional until individually reviewed; missing values are not inferred.
+
+The contextual classification rules distinguish demonstrative determiners from pronouns, main-verb uses of *need* from modal uses, and auxiliary from main-verb uses of *be*. Grammar references: [Cambridge on demonstratives](https://dictionary.cambridge.org/grammar/british-grammar/this-that-these-those), [need](https://dictionary.cambridge.org/grammar/british-grammar/need), and [be](https://dictionary.cambridge.org/grammar/british-grammar/be-).
+
+`bun run check` runs classification regressions, token alignment across every passage, simulated hunts and scoring, question validation, and data validation. Data warnings include missing explanatory notes and repeated single-word exercises; no validation errors should remain.

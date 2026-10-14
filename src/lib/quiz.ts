@@ -69,5 +69,5 @@ export function buildQuestions(passage: Passage): BuiltQuestion[] {
     kind: 'curated' as const,
   }))
 
-  return [funcQuestion, ...curated, registerQuestion]
+  return passage.lengthTier === 0 ? curated : [funcQuestion, ...curated, registerQuestion]
 }

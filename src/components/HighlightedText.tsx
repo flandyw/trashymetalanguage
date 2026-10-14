@@ -51,7 +51,7 @@ export default function HighlightedText({
   return (
     <p className={`passage passage-${size}`}>
       {tok.segments.map((seg, i) => {
-        if (seg.kind === 'text') {
+        if (seg.kind !== 'word') {
           return <Fragment key={`t${i}`}>{seg.value}</Fragment>
         }
         const token = tok.tokens[seg.token]

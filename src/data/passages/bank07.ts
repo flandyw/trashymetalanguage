@@ -68,7 +68,7 @@ export const bank07: PassageBank = {
         },
         {
           feature: 'noun-proper',
-          spans: ['Daicos', 'Blues'],
+          spans: ["Mahoney","Blues"],
           note: 'Player surname and club nickname, both capitalised as unique referents.',
         },
         {
@@ -312,7 +312,7 @@ export const bank07: PassageBank = {
         },
         {
           feature: 'noun-proper',
-          spans: ['Saturday', 'Tuesday', 'Thunder'],
+          spans: ["Saturday's","Tuesday","Thunder"],
           note: 'Days and the team name are all capitalised as specific referents.',
         },
         {
@@ -600,7 +600,7 @@ export const bank07: PassageBank = {
       gold: [
         {
           feature: 'noun-proper',
-          spans: ['Johnsons'],
+          spans: ["Johnsons'"],
           note: 'A surname turned into a place by adding an apostrophe — a familiar rural habit.',
         },
         {

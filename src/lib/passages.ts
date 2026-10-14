@@ -46,12 +46,12 @@ export interface Passage {
   source: string
 
   /* ---- VCE classification (study design 2024-2028) ---- */
-  /** The unit this passage best serves. */
-  unit: Unit
+  /** The unit this passage best serves, when reviewed for curriculum alignment. */
+  unit?: Unit
   /** One of the area-of-study ids in vce.ts, belonging to `unit`. */
-  areaOfStudy: string
+  areaOfStudy?: string
   /** One of the text forms the study design says students should meet. */
-  textType: TextTypeId
+  textType?: TextTypeId
   /** Language mode: speaking, writing or multimodal. */
   mode: LanguageMode
   /** Short noun phrase: the subject matter or activity (situational context). */

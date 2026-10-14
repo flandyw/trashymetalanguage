@@ -877,7 +877,7 @@ export const bank05: PassageBank = {
         },
         {
           feature: 'pronoun',
-          spans: ['you', 'our', 'this'],
+          spans: ["you","this"],
           note: 'Second person for the voter and first person plural for the campaign: two teams, one message.',
         },
         {

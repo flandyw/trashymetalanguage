@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check": "bun scripts/check-classification.ts && bun scripts/check-app.ts && bun scripts/check-data.ts",
     "preview": "vite preview"
   },
   "dependencies": {

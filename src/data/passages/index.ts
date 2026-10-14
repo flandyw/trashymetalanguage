@@ -1,4 +1,5 @@
 import type { Passage, PassageBank } from '../../lib/passages'
+import { starter } from './starter'
 import { bank01 } from './bank01'
 import { bank02 } from './bank02'
 import { bank03 } from './bank03'
@@ -15,6 +16,7 @@ import { bank13 } from './persuasion'
 import { bank14 } from './ladder'
 
 export const BANKS: PassageBank[] = [
+  starter,
   bank14,
   bank01,
   bank02,
