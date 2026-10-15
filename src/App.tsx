@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import EvidenceNotebook from './components/EvidenceNotebook'
+import CoursePanel from './components/CoursePanel'
+import AnalysisPanel from './components/AnalysisPanel'
+import { loadStudy, saveStudy } from './lib/study'
+import { courseLabel } from './lib/curriculum'
+import { TEXT_TYPE_LABELS, TRANSCRIPT_LEGEND } from './lib/vce'
+import type { Unit } from './lib/taxonomy'
 import HeaderBar from './components/HeaderBar'
 import HighlightedText, { type TokenState, type Underline } from './components/HighlightedText'
 import HuntPanel, { type HuntInfo } from './components/HuntPanel'
@@ -9,12 +16,11 @@ import QuizPanel from './components/QuizPanel'
 import { buildQuestions } from './lib/quiz'
 import WordPopover, { type Anchor } from './components/WordPopover'
 import ExplorePanel from './components/ExplorePanel'
-import { ALL_PASSAGES, passageById, passagesForFeature } from './data/passages'
+import { ALL_PASSAGES, passageById, passagesForFeature, nextInUnit as nextPassageId } from './data/passages'
 import {
   HINT_COST,
   huntCandidates,
   makeHunt,
-  nextPassageId,
   occurrenceFor,
   type Hunt,
 } from './lib/hunt'
@@ -36,7 +42,7 @@ import {
 import { loadLastPassage, loadProfile, resetProfile, saveLastPassage, saveProfile } from './lib/storage'
 import { playBadge, playClick, playHit, playMiss, setSoundEnabled, soundEnabled } from './lib/sound'
 
-type View = 'hunt' | 'explore' | 'quiz' | 'library' | 'progress'
+type View = 'course' | 'write' | 'hunt' | 'explore' | 'quiz' | 'library' | 'progress'
 
 interface Toast {
   id: number
@@ -44,17 +50,25 @@ interface Toast {
   kind: 'xp' | 'badge' | 'rank' | 'info'
 }
 
+function initialPassage(): Passage {
+  const saved = passageById(loadLastPassage() ?? '')
+  return saved ?? ALL_PASSAGES.find(p => p.unit === loadStudy().unit && p.lengthTier >= 2) ?? ALL_PASSAGES[0]
+}
+
 /* ---------------------------------------------------------------------- app */
 
 export default function App() {
   const [profile, setProfile] = useState<Profile>(() => loadProfile())
-  const [view, setView] = useState<View>('hunt')
+  const [view, setView] = useState<View>('course')
+  const [study, setStudy] = useState(loadStudy)
+  const [libraryArea, setLibraryArea] = useState('all')
+  const [libraryUnit, setLibraryUnit] = useState<Unit | 'all'>(() => loadStudy().unit)
+  useEffect(() => { saveStudy(study) }, [study])
   const [passageId, setPassageId] = useState<string>(
-    () => loadLastPassage() ?? ALL_PASSAGES[0].id,
+    () => initialPassage().id,
   )
   const [hunt, setHunt] = useState<Hunt | null>(() => {
-    const start =
-      passageById(loadLastPassage() ?? ALL_PASSAGES[0].id) ?? ALL_PASSAGES[0]
+    const start = initialPassage()
     return makeHunt(start, loadProfile())
   })
   const [customText, setCustomText] = useState<string | null>(null)
@@ -85,6 +99,11 @@ export default function App() {
   }, [sound])
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    const nav = document.querySelector<HTMLElement>('.tabs')
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]')
+    if (nav && active && nav.scrollWidth > nav.clientWidth) {
+      nav.scrollLeft = active.offsetLeft - nav.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2
+    }
   }, [passageId, view])
 
   const pushToast = useCallback((text: string, kind: Toast['kind'] = 'xp') => {
@@ -142,10 +161,11 @@ export default function App() {
         setHunt((h) => (h && h.passageId === passageId ? h : makeHunt(passage, profile)))
       }
       if (next !== 'explore' && customText) setCustomText(null)
+      if (next === 'library') { setLibraryArea('all'); setLibraryUnit(study.unit) }
       setView(next)
       setSelected(null)
     },
-    [customText, passage, passageId, profile],
+    [customText, passage, passageId, profile, study.unit],
   )
 
   const huntOccurrenceFor = useCallback(
@@ -269,6 +289,7 @@ export default function App() {
       const target = passageById(id)
       if (!target) return
       setPassageId(id)
+      if (target.unit) setStudy(prev => ({...prev, unit: target.unit!}))
       setSource('gold')
       setLayers(new Set())
       setSelected(null)
@@ -439,7 +460,7 @@ export default function App() {
         profile={profile}
         onOpenProgress={() => switchView('progress')}
         onReset={() => {
-          if (!window.confirm('Clear all saved XP, badges and practice history? This cannot be undone.')) return
+          if (!window.confirm('Clear XP, badges and identification/quiz statistics? Course checklists, drafts and the source notebook will be kept.')) return
           setProfile(resetProfile())
           pushToast('Progress cleared', 'info')
         }}
@@ -448,10 +469,12 @@ export default function App() {
       <nav className="tabs" aria-label="Modes">
         {(
           [
-            ['hunt', 'Practise'],
+            ['course', 'Course'],
+            ['hunt', 'Identify'],
             ['explore', 'Explore'],
+            ['write', 'Write analysis'],
             ['quiz', 'Quiz'],
-            ['library', 'Passages'],
+            ['library', 'Texts'],
             ['progress', 'Progress'],
           ] as [View, string][]
         ).map(([id, label]) => (
@@ -479,20 +502,27 @@ export default function App() {
 
       <div className="mode-intro">
         <div><span className="eyebrow">VCE ENGLISH LANGUAGE</span>
-          <h2>{view === 'hunt' ? 'Notice the language. Explain the choice.' : view === 'explore' ? 'Look closer at how language works.' : view === 'quiz' ? 'Turn observations into analysis.' : view === 'library' ? 'Find your next text.' : 'Your practice, over time.'}</h2>
-          <p>{view === 'hunt' ? 'Read the target below, then select its examples in the passage. For a phrase, select any word inside it.' : view === 'explore' ? 'Choose a feature to highlight its examples, or select a word to read its explanation.' : view === 'quiz' ? 'Read the passage, choose an answer, and use the explanation to check your reasoning.' : view === 'library' ? 'Choose a short warm-up or work through a passage in context.' : 'Revisit the features that need more practice.'}</p>
+          <h2>{view === 'course' ? 'Your VCE English Language course.' : view === 'write' ? 'Develop an evidence-based language analysis.' : view === 'hunt' ? 'Notice the language. Explain the choice.' : view === 'explore' ? 'Look closer at how language works.' : view === 'quiz' ? 'Turn observations into analysis.' : view === 'library' ? 'Find your next text.' : 'Your practice, over time.'}</h2>
+          <p>{view === 'course' ? 'Choose your unit and area of study. Move from precise metalanguage to evidence-based analysis of Australian language use.' : view === 'write' ? 'Use textual evidence and metalanguage to explain context, function, purpose and social meaning.' : view === 'hunt' ? 'Read the target below, then select its examples in the passage. For a phrase, select any word inside it.' : view === 'explore' ? 'Choose a feature to highlight its examples, or select a word to read its explanation.' : view === 'quiz' ? 'Read the passage, choose an answer, and use the explanation to check your reasoning.' : view === 'library' ? 'Choose a short warm-up or work through a passage in context.' : 'Revisit the features that need more practice.'}</p>
         </div>
         <button className="btn" onClick={() => switchView(view === 'library' ? 'hunt' : 'library')}>{view === 'library' ? 'Resume practice' : 'Browse passages →'}</button>
       </div>
 
-      {view === 'progress' ? (
+      {view === 'course' ? (
+        <div className="course-stack"><CoursePanel unit={study.unit} onUnit={unit => { setStudy(prev=>({...prev,unit})); const target=ALL_PASSAGES.find(p=>p.unit===unit && p.lengthTier>=2); if(target) goToPassage(target.id,'course') }}
+          reviewed={study.reviewed} onReview={id=>setStudy(prev=>({...prev,reviewed:prev.reviewed.includes(id)?prev.reviewed.filter(x=>x!==id):[...prev.reviewed,id]}))}
+          onTexts={area=>{setLibraryUnit(study.unit);setLibraryArea(area);setView('library')}}
+          onPractise={id=>goToPassage(id,'write')}/>
+          <EvidenceNotebook unit={study.unit} entries={study.evidence} onAdd={entry=>setStudy(prev=>({...prev,evidence:[entry,...prev.evidence]}))} onRemove={id=>setStudy(prev=>({...prev,evidence:prev.evidence.filter(e=>e.id!==id)}))}/>
+        </div>
+      ) : view === 'progress' ? (
         <ProgressPanel
           profile={profile}
           onClose={() => switchView('hunt')}
           onPractise={practiseFeature}
         />
       ) : view === 'library' ? (
-        <LibraryPanel
+        <LibraryPanel key={`${libraryUnit}:${libraryArea}`} initialUnit={libraryUnit} initialArea={libraryArea}
           currentId={passageId}
           mastered={profile.passagesMastered}
           onPick={(id) => goToPassage(id, 'hunt')}
@@ -501,6 +531,7 @@ export default function App() {
       ) : (
         <main className={`stage${view === 'explore' ? ' stage--split' : ''}`}>
           <section className="board">
+            {!customText && <div className="curriculum-path"><span>{courseLabel(passage)}</span><button className="btn btn--ghost btn--tiny" onClick={()=>{if(passage.unit)setStudy(prev=>({...prev,unit:passage.unit!}));switchView('course')}}>View outcome →</button></div>}
             <div className="board__meta">
               <button
                 type="button"
@@ -534,6 +565,7 @@ export default function App() {
               </button>
             </div>
 
+            {passage.transcript && !customText && <details className="transcript-legend"><summary>Transcript conventions · numbered turns</summary><p>Numbers refer to the supplied turns, not visual line wrapping. Use only recorded prosodic and paralinguistic evidence.</p><dl>{TRANSCRIPT_LEGEND.map(item=><div key={item.symbol}><dt>{item.symbol}</dt><dd>{item.meaning}</dd></div>)}</dl></details>}
             {view === 'hunt' && hunt && !customText && (
               <div className="target-brief">
                 <span className="eyebrow">YOUR TARGET · {hunt.occurrences.length} EXAMPLE{hunt.occurrences.length === 1 ? '' : 'S'}</span>
@@ -544,6 +576,7 @@ export default function App() {
             <div className="board__text" data-mode={view}>
               <p className="reading-label">{view === 'hunt' ? 'SELECT THE EXAMPLES' : 'READ & INVESTIGATE'}<span>{customText || source === 'auto' && view === 'explore' ? 'Automatic suggestions' : 'Passage answer key'}</span></p>
               <HighlightedText
+                lineNumbers={!!passage.transcript && !customText}
                 tok={customText ? analysed.tok : preparedGold.tok}
                 painted={painted}
                 states={states}
@@ -565,6 +598,10 @@ export default function App() {
                 hintCost={HINT_COST}
               />
             )}
+
+            {view === 'write' && <AnalysisPanel key={passage.id} passage={passage} drafts={study.drafts} checked={study.checked}
+              onDraft={(id,text)=>setStudy(prev=>({...prev,drafts:{...prev.drafts,[id]:text}}))}
+              onCheck={(id,item)=>setStudy(prev=>{const current=prev.checked[id]??[];return {...prev,checked:{...prev.checked,[id]:current.includes(item)?current.filter(x=>x!==item):[...current,item]}}})}/>}
 
             {view === 'quiz' && (
               <QuizPanel
@@ -608,6 +645,10 @@ export default function App() {
                 </button>
                 {showAnalysis && (
                   <dl className="analysis__grid">
+                    <div><dt>Course focus</dt><dd>{courseLabel(passage)}<span className="muted"> — teaching focus, not a prediction of an exam topic</span></dd></div>
+                    <div><dt>Text type & setting</dt><dd>{TEXT_TYPE_LABELS[passage.textType ?? ''] ?? 'Extract'} · {passage.setting}</dd></div>
+                    <div><dt>Purpose</dt><dd>{passage.purpose ?? passage.functionNote}</dd></div>
+                    <div><dt>Cultural context</dt><dd>{passage.culturalContext ?? 'Infer values and assumptions from the evidence; the source description alone does not establish them.'}</dd></div>
                     <div>
                       <dt>Field</dt>
                       <dd>{passage.field}</dd>
@@ -702,7 +743,7 @@ export default function App() {
           const revealGold =
             (view === 'explore' && source === 'gold' && !customText) ||
             (view === 'hunt' && !!hunt?.done) ||
-            view === 'quiz' ||
+            view === 'quiz' || view === 'write' ||
             view === 'library'
           return (
             <WordPopover

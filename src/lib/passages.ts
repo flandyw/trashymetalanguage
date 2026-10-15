@@ -60,6 +60,12 @@ export interface Passage {
   tenor: string
   /** Short phrase: time, place and medium of the exchange. */
   setting: string
+  /** Explicit cultural assumptions or values supplied for close analysis. */
+  culturalContext?: string
+  /** Communicative goal, distinct from grammatical form and language function. */
+  purpose?: string
+  /** App-authored model discussion for written practice. */
+  analysisModel?: string
   register: RegisterId
   registerNote: string
   dominantFunction: FunctionId

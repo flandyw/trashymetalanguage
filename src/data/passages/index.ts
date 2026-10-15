@@ -1,4 +1,7 @@
 import type { Passage, PassageBank } from '../../lib/passages'
+import { alignBank } from '../../lib/curriculum'
+import { vceFocus } from './vce-focus'
+import { bankU1Acquisition } from './u1-acquisition'
 import { starter } from './starter'
 import { bank01 } from './bank01'
 import { bank02 } from './bank02'
@@ -16,7 +19,9 @@ import { bank13 } from './persuasion'
 import { bank14 } from './ladder'
 
 export const BANKS: PassageBank[] = [
+  vceFocus,
   starter,
+  bankU1Acquisition,
   bank14,
   bank01,
   bank02,
@@ -31,7 +36,7 @@ export const BANKS: PassageBank[] = [
   bank07,
   bank12,
   bank08,
-]
+].map(alignBank)
 
 export const ALL_PASSAGES: Passage[] = BANKS.flatMap((b) => b.passages)
 
@@ -53,3 +58,12 @@ export function passagesForFeature(featureId: string): Passage[] {
 export const BANKS_BY_ID: Record<string, PassageBank> = Object.fromEntries(
   BANKS.map((b) => [b.id, b]),
 )
+
+/** Passage navigation stays in the current unit, including when it wraps. */
+export function nextInUnit(id: string, direction = 1): string {
+  const current = passageById(id)
+  const pool = ALL_PASSAGES.filter(p => p.unit === current?.unit)
+  if (!pool.length) return ALL_PASSAGES[0].id
+  const index = pool.findIndex(p => p.id === id)
+  return pool[(index + direction + pool.length) % pool.length].id
+}

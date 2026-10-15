@@ -10,6 +10,7 @@ export interface Underline {
 }
 
 interface Props {
+  lineNumbers?: boolean
   tok: Tokenized
   /** token index -> feature ids currently painted. */
   painted: Map<number, string[]>
@@ -31,6 +32,7 @@ function topColour(features: string[]): string | undefined {
 
 export default function HighlightedText({
   tok,
+  lineNumbers = false,
   painted,
   states,
   underlines,
@@ -48,9 +50,17 @@ export default function HighlightedText({
     }
   }
 
+  const turns = new Map<number, number>()
+  let turn = 0
+  for (let i = 0; i < tok.segments.length; i += 1) {
+    if (tok.segments[i].kind === 'label') turns.set(i, ++turn)
+  }
   return (
     <p className={`passage passage-${size}`}>
       {tok.segments.map((seg, i) => {
+        if (seg.kind === 'label' && lineNumbers) {
+          return <span key={`label${i}`} className="transcript-speaker"><span className="line-number" aria-label={`Line ${turns.get(i)}`}>{turns.get(i)}</span>{seg.value}</span>
+        }
         if (seg.kind !== 'word') {
           return <Fragment key={`t${i}`}>{seg.value}</Fragment>
         }

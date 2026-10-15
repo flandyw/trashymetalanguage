@@ -1,5 +1,5 @@
 /**
- * Structure of the VCE English Language study design (2024-2028): units, areas
+ * Structure of the VCE English Language study design (implementation from 2024): units, areas
  * of study, text types and language modes. Passages are classified against
  * these so learners can practise exactly the part of the course they are on.
  */
@@ -37,7 +37,7 @@ export const UNITS: UnitMeta[] = [
         unit: 1,
         title: 'The nature and functions of language',
         blurb:
-          'Language as a meaning-making system; Jakobson’s six functions; register, tenor and context; speech versus writing.',
+          'Language as a meaning-making system; Functions of language; register, tenor and context; speech versus writing.',
       },
       {
         id: 'u1-acquisition',

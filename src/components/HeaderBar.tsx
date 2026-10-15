@@ -17,9 +17,9 @@ export default function HeaderBar({ profile, onOpenProgress, onReset }: Props) {
       <div className="brand">
         <span className="brand__mark">HL</span>
         <div>
-          <h1>Metalanguage Highlighter</h1>
+          <h1>VCE English Language</h1>
           <p className="brand__sub">
-            VCE English Language · Read closely. Name precisely. Explain clearly.
+            Units 1–4 · Metalanguage, context & linguistic analysis
           </p>
         </div>
       </div>
